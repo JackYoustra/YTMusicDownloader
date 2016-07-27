@@ -15,7 +15,9 @@ class Entry:
         self.beginning = beginning
         self.end = end
         self.name = name
-
+    def __repr__(self):
+        return self.name + " {" +  str(self.beginning) + ", " + str(self.end) + "}"
+    
 def make_sure_path_exists(path):
     try:
         os.makedirs(path)
@@ -38,16 +40,16 @@ def parse(description, overallTime):
     
     validLines = []
     lines = description.splitlines()
-    pattern = re.compile("[A-Z]\s[0-9]?:[0-9]{1,2}:[0-9]{1,2}$") #Killigrew - Timeless As The Waves 1:44:58
+    pattern = re.compile("[a-zA-Z]\s([0-9]:)?[0-9]{1,2}:[0-9]{1,2}$") #Killigrew - Timeless As The Waves 1:44:58
     for line in lines:
         matchobj = pattern.search(line)
-        if matchobj == None:
+        if matchobj != None:
             validLines.append(line)
     
     nameList = []
     secondsList = []
     for line in validLines:
-        index = line.rindex('\s')
+        index = line.rindex(' ')
         name = line[:index]
         timeString = line[index:]
         seconds = timestring_to_seconds(timeString)
@@ -58,9 +60,10 @@ def parse(description, overallTime):
     startTime = 0
     ## add last time
     secondsList.append(overallTime)
-    for index in range(len(1, secondsList)):
+    for index in range(1, len(secondsList)):
         # will go through end times for all if last time appended
         currentEnd = secondsList[index]
+        name = nameList[index-1]
         entry = Entry(name, startTime, currentEnd)
         entryList.append(entry)
         startTime = currentEnd
@@ -78,8 +81,13 @@ def download(url):
     with youtube_dl.YoutubeDL(options) as ydl:
         info = ydl.extract_info(url, download=False)  # don't download, much faster
         description = info['description']
+        totalDuration = info['duration']
         #ydl.download([url])
-    print(description)
+    encodedDesc = str(description)
+    entries = parse(encodedDesc, totalDuration)
+    for entry in entries:
+        print(entry)
+    
     # load sound
     AudioSegment.from_mp3("largeout.mp3")
     make_sure_path_exists("music/")
