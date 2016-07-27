@@ -11,10 +11,12 @@ from pydub.audio_segment import AudioSegment
 import regex as re
 
 class Entry:
-    def __init__(self, name, beginning, end):
+    def __init__(self, name, artist, beginning, end):
         self.beginning = beginning
         self.end = end
         self.name = name
+        self.artist = artist
+    
     def __repr__(self):
         return self.name + " {" +  str(self.beginning) + ", " + str(self.end) + "}"
     
@@ -47,13 +49,17 @@ def parse(description, overallTime):
             validLines.append(line)
     
     nameList = []
+    artistList = []
     secondsList = []
     for line in validLines:
         index = line.rindex(' ')
-        name = line[:index]
+        prefixBlob = line[:index].split(' - ')
+        name = prefixBlob[0]
+        artist = prefixBlob[1]
         timeString = line[index:]
         seconds = timestring_to_seconds(timeString)
         nameList.append(name)
+        artistList.append(artist)
         secondsList.append(seconds)
     
     assert len(nameList) == len(secondsList)
@@ -64,11 +70,17 @@ def parse(description, overallTime):
         # will go through end times for all if last time appended
         currentEnd = secondsList[index]
         name = nameList[index-1]
-        entry = Entry(name, startTime, currentEnd)
+        artist = artistList[index-1]
+        entry = Entry(name, artist, startTime, currentEnd)
         entryList.append(entry)
         startTime = currentEnd
     
     return entryList
+
+def split(entries, longsegment, yt_name):
+    for entry in entries:
+        currentSoundSegment = longsegment[entry.beginning*1000:entry.end*1000]
+        currentSoundSegment.export("export/" + entry.name + ".mp3", tags={'artist': entry.artist, 'album': yt_name})
 
 def download(url):
     options = {
@@ -82,15 +94,14 @@ def download(url):
         info = ydl.extract_info(url, download=False)  # don't download, much faster
         description = info['description']
         totalDuration = info['duration']
+        yt_name = info['title']
         #ydl.download([url])
     encodedDesc = str(description)
     entries = parse(encodedDesc, totalDuration)
-    for entry in entries:
-        print(entry)
     
     # load sound
-    AudioSegment.from_mp3("largeout.mp3")
-    make_sure_path_exists("music/")
-    
+    make_sure_path_exists("export/")
+    sound = AudioSegment.from_mp3("largeout.mp3")
+    split(entries, sound, yt_name)
     
     
