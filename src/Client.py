@@ -6,4 +6,6 @@ Created on Jul 26, 2016
 import FileDownloader
 
 if __name__ == '__main__':
-    FileDownloader.download("https://www.youtube.com/watch?v=fWRISvgAygU")
+    dubsteppath = "https://www.youtube.com/watch?v=fWRISvgAygU"
+    catalystpath = "https://www.youtube.com/watch?v=PNjqP9JLN-c"
+    FileDownloader.download(catalystpath)
